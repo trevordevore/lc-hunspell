@@ -1,0 +1,218 @@
+library community.livecode.trevordevore.hunspell
+
+  use com.livecode.engine
+  use com.livecode.foreign
+
+  metadata title is "Hunspell"
+  metadata author is "Trevor DeVore"
+  metadata version is "0.0.1"
+
+  constant kMCStringEncodingUTF8 is 4
+
+  public type Hunspell is Pointer
+
+  foreign handler MCStringCreateWithCString(in pString as Pointer, out rString as String) returns CBool binds to "<builtin>"
+  foreign handler MCStringConvertToBytes(in pString as String, in pEncoding as CUInt, in pIsExternalRep as CBool, out rBytes as Pointer, out rByteCount as LCUInt) \
+            returns CBool binds to "<builtin>"
+  foreign handler MCDataGetBytePtr(in pData as Data) returns Pointer binds to "<builtin>"
+
+  foreign handler hunspell_create (in pAffPath as ZStringNative, in pDPath as ZStringNative) \
+        returns Hunspell \
+        binds to "c:libhunspell>Hunspell_create"
+
+  foreign handler hunspell_destroy (in pHunspell as Hunspell) \
+        returns nothing \
+        binds to "c:libhunspell>Hunspell_destroy"
+
+  foreign handler hunspell_spell (in pHunspell as Hunspell, in pUTF8String as Pointer) \
+        returns CInt \
+        binds to "c:libhunspell>Hunspell_spell"
+
+  foreign handler hunspell_get_dic_encoding (in pHunspell as Hunspell) \
+        returns Pointer \
+        binds to "c:libhunspell>Hunspell_get_dic_encoding"
+
+  foreign handler hunspell_suggest (in pHunspell as Hunspell, out pSuggestionList as Pointer, in pWord as ZStringNative) \
+        returns CInt \
+        binds to "c:libhunspell>Hunspell_suggest"
+
+  foreign handler hunspell_add (in pHunspell as Hunspell, in pWord as ZStringNative) \
+        returns CInt \
+        binds to "c:libhunspell>Hunspell_add"
+
+  foreign handler hunspell_add_with_affix (in pHunspell as Hunspell, in pWord as ZStringNative, in pExample as ZStringNative) \
+        returns CInt \
+        binds to "c:libhunspell>Hunspell_add_with_affix"
+
+  foreign handler hunspell_remove (in pHunspell as Hunspell, in pWord as ZStringNative) \
+        returns CInt \
+        binds to "c:libhunspell>Hunspell_remove"
+
+  foreign handler hunspell_free_list (in pHunspell as Hunspell, in pList as Pointer, in pNumSuggestions as CInt) \
+        returns nothing \
+        binds to "c:libhunspell>Hunspell_free_list"
+
+  private variable mHunspell as optional Hunspell
+
+
+  /**
+  Summary: Initialize the internal Hunspell pointer with an affix and dictionary file.
+
+  Returns: nothing
+  */
+  public handler hunspellInitialize(in pAffixPath as String, in pDictPath as String) returns nothing
+    unsafe
+      if mHunspell is not nothing then
+        hunspell_destroy(mHunspell)
+      end if
+
+      put hunspell_create(pAffixPath, pDictPath) into mHunspell
+    end unsafe
+  end handler
+
+
+  /**
+  Summary: Destroy the internal Hunspell pointer before your app quits.
+
+  Returns: nothing
+  */
+  public handler hunspellDestroy() returns nothing
+    unsafe
+      if (mHunspell is not nothing) then
+        hunspell_destroy(mHunspell)
+      end if
+    end unsafe
+  end handler
+
+
+  /**
+  Summary: Spellcheck word.
+
+  Description:
+  Returns `true` if the word is spelled correctly, `false` otherwise.
+
+  Returns: Boolean
+  */
+  public handler hunspellSpell(in pString as String) returns Boolean
+    variable tRslt as Integer
+    variable tUTF8String as Pointer
+    variable tByteCount as Number
+
+    unsafe
+      /*
+        0 = bad word
+        not 0 = good word
+      */
+      if MCStringConvertToBytes(pString, kMCStringEncodingUTF8, false, tUTF8String, tByteCount) then
+        put hunspell_spell(mHunspell, tUTF8String) into tRslt
+        return tRslt is not 0
+      else
+        log "unable to convert string to UTF-8"
+        return false
+      end if
+    end unsafe
+  end handler
+
+
+  /**
+  Summary: Returns the encoding of the currently loaded dictionary.
+
+  Returns: String
+  */
+  public handler hunspellGetDicEncoding() returns String
+    variable tEncPtr as Pointer
+    variable tEncoding as String
+
+    unsafe
+      put hunspell_get_dic_encoding(mHunspell) into tEncPtr
+      if not MCStringCreateWithCString(tEncPtr, tEncoding) then
+        log "failed to convert const char * to String"
+      end if
+    end unsafe
+
+    return tEncoding
+  end handler
+
+
+  /**
+  Summary:
+
+  Returns: String
+  */
+  public handler hunspellSuggest(in pString as String) returns String
+    variable tNumSuggestions as Integer
+    variable tArrayOfStrings as Pointer
+    variable tSuggestions as String
+    variable tIndex as Integer
+
+    unsafe
+      put hunspell_suggest(mHunspell, tArrayOfStrings, pString) into tNumSuggestions
+      log tNumSuggestions
+      if tNumSuggestions > 0 then
+        repeat with tIndex from 1 up to tNumSuggestions
+
+        end repeat
+
+        hunspell_free_list(mHunspell, tArrayOfStrings, tNumSuggestions)
+      end if
+    end unsafe
+
+    return ""
+  end handler
+
+
+  /**
+  Summary: Add a new word to the run-time dictionary.
+
+  Parameters:
+  pWord: The word to add.
+
+  Returns: nothing
+  */
+  public handler hunspellAdd(in pWord as String) returns nothing
+    variable tRslt as Integer
+
+    unsafe
+      put hunspell_add(mHunspell, pWord) into tRslt
+      log tRslt
+    end unsafe
+  end handler
+
+
+  /**
+  Summary: Add a word to the run-time dictionary with affix flags of the example.
+
+  Parameters:
+  pWord: The word to add.
+  pExample: The affix example.
+
+  Returns: nothing
+  */
+  public handler hunspellAddWithAffix(in pWord as String, in pExample as String) returns nothing
+    variable tRslt as Integer
+
+    unsafe
+      put hunspell_add_with_affix(mHunspell, pWord, pExample) into tRslt
+      log tRslt
+    end unsafe
+  end handler
+
+
+  /**
+  Summary: Remove a word from the run-time dictionary.
+
+  Parameters:
+  pWord: The word to remove.
+
+  Returns: nothing
+  */
+  public handler hunspellRemove(in pWord as String) returns nothing
+    variable tRslt as Integer
+
+    unsafe
+      put hunspell_remove(mHunspell, pWord) into tRslt
+      log tRslt
+    end unsafe
+  end handler
+
+end library

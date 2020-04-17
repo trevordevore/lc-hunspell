@@ -1,0 +1,5 @@
+# Unnecessary LiveCode Builder files
+*.lcm
+*.lci
+*.xml
+*.lcdoc
