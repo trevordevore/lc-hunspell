@@ -203,14 +203,14 @@ library community.livecode.trevordevore.hunspell
   Parameters:
   pWord: The word to add.
 
-  Returns: nothing
+  Returns: Boolean
   */
-  public handler hunspellAdd(in pWord as String) returns nothing
+  public handler hunspellAdd(in pWord as String) returns Boolean
     variable tRslt as Integer
 
     unsafe
       put hunspell_add(mHunspell, pWord) into tRslt
-      log tRslt
+      return tRslt is 0
     end unsafe
   end handler
 
@@ -222,14 +222,14 @@ library community.livecode.trevordevore.hunspell
   pWord: The word to add.
   pExample: The affix example.
 
-  Returns: nothing
+  Returns: Boolean
   */
-  public handler hunspellAddWithAffix(in pWord as String, in pExample as String) returns nothing
+  public handler hunspellAddWithAffix(in pWord as String, in pExample as String) returns Boolean
     variable tRslt as Integer
 
     unsafe
       put hunspell_add_with_affix(mHunspell, pWord, pExample) into tRslt
-      log tRslt
+      return tRslt is 0
     end unsafe
   end handler
 
@@ -240,14 +240,14 @@ library community.livecode.trevordevore.hunspell
   Parameters:
   pWord: The word to remove.
 
-  Returns: nothing
+  Returns: Boolean
   */
-  public handler hunspellRemove(in pWord as String) returns nothing
+  public handler hunspellRemove(in pWord as String) returns Boolean
     variable tRslt as Integer
 
     unsafe
       put hunspell_remove(mHunspell, pWord) into tRslt
-      log tRslt
+      return tRslt is 0
     end unsafe
   end handler
 
