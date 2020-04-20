@@ -80,6 +80,7 @@ library community.livecode.trevordevore.hunspell
     unsafe
       if (mHunspell is not nothing) then
         hunspell_destroy(mHunspell)
+        put nothing into mHunspell
       end if
     end unsafe
   end handler
