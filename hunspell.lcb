@@ -67,6 +67,10 @@ library community.livecode.trevordevore.hunspell
   /**
   Summary: Initialize the internal Hunspell pointer with an affix and dictionary file.
 
+  Parameters:
+  pAffixPath: The path to the affix file. Must use UTF-8 encoding.
+  pDictPath: The path to the dictionary file. Must use UTF-8 encoding.
+
   Returns: nothing
   */
   public handler hunspellInitialize(in pAffixPath as String, in pDictPath as String) returns nothing
@@ -138,7 +142,7 @@ library community.livecode.trevordevore.hunspell
     unsafe
       put hunspell_get_dic_encoding(mHunspell) into tEncPtr
       if not MCStringCreateWithCString(tEncPtr, tEncoding) then
-        log "failed to convert const char * to String"
+        log "Error: failed to convert const char * to String"
       end if
     end unsafe
 
@@ -169,20 +173,21 @@ library community.livecode.trevordevore.hunspell
 
           if CArrayToList("r", tSuggestionsCArray, tNumSuggestions, tList) then
             repeat for each element tStrList in tList
+              // TODO: Convert string based on dictionary encoding. Currently assuming it is UTF-8.
               if MCStringCreateWithBytes(tStrList[1], CStrLen(tStrList[1]) , kMCStringEncodingUTF8, false, tSuggestion) then
                 push tSuggestion onto tSuggestionsList
               else
-                log "Error: Unable to convert UTF-8 suggestion to string"
+                log "Error: failed to convert UTF-8 suggestion to string"
               end if
             end repeat
           else
-            log "Error: Unable to convert CArray to List"
+            log "Error: failed to convert CArray to List"
           end if
         end if
 
         hunspell_free_list(mHunspell, tSuggestionsCArray, tNumSuggestions)
       else
-        log "unable to convert string to UTF-8"
+        log "Error: failed to convert string to UTF-8"
       end if
     end unsafe
 
