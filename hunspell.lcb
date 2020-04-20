@@ -112,12 +112,14 @@ library community.livecode.trevordevore.hunspell
       /*
         0 = bad word
         not 0 = good word
+
+        TODO: Convert string based on dictionary encoding. Currently assuming it is UTF-8.
       */
       if MCStringConvertToBytes(pString, kMCStringEncodingUTF8, false, tUTF8String, tByteCount) then
         put hunspell_spell(mHunspell, tUTF8String) into tRslt
         return tRslt is not 0
       else
-        log "unable to convert string to UTF-8"
+        log "Error: unable to convert string to UTF-8"
         return false
       end if
     end unsafe
@@ -245,6 +247,16 @@ library community.livecode.trevordevore.hunspell
   end handler
 
 
+  /**
+  Summary: Converts a C Array into a List. The list returns a list of lists.
+
+  Description:
+  This is used to convert the array of strings that is created by `hunspell_suggest`.
+
+  Code provided by Monte Goulding.
+
+  Returns: Boolean
+  */
   unsafe handler CArrayToList(in pAggregateBinding as String, in pCArray as Pointer, in pCount as Integer, out rList as List) returns Boolean
     variable tTypeInfo as Pointer
     if not MCAggregateTypeInfo(pAggregateBinding, tTypeInfo) then
