@@ -13,8 +13,12 @@ library community.livecode.trevordevore.hunspell
 
   foreign handler MCStringCreateWithCString(in pString as Pointer, out rString as String) returns CBool binds to "<builtin>"
   foreign handler MCStringConvertToBytes(in pString as String, in pEncoding as CUInt, in pIsExternalRep as CBool, out rBytes as Pointer, out rByteCount as LCUInt) \
-            returns CBool binds to "<builtin>"
+        returns CBool binds to "<builtin>"
   foreign handler MCDataGetBytePtr(in pData as Data) returns Pointer binds to "<builtin>"
+  foreign handler MCAggregateTypeInfo(in pBinding as String, out rTypeInfo as Pointer) returns CBool binds to "<builtin>"
+  foreign handler MCValueRelease(in pValue as Pointer) returns nothing binds to "<builtin>"
+  foreign handler MCProperListCreateWithForeignValues(in pTypeInfo as Pointer, \
+        in pCArray as Pointer, in pCount as LCUIndex, out pList as List) returns CBool binds to "<builtin>"
 
   foreign handler hunspell_create (in pAffPath as ZStringNative, in pDPath as ZStringNative) \
         returns Hunspell \
@@ -32,7 +36,7 @@ library community.livecode.trevordevore.hunspell
         returns Pointer \
         binds to "c:libhunspell>Hunspell_get_dic_encoding"
 
-  foreign handler hunspell_suggest (in pHunspell as Hunspell, out pSuggestionList as Pointer, in pWord as ZStringNative) \
+  foreign handler hunspell_suggest (in pHunspell as Hunspell, inout pSuggestionList as Pointer, in pWord as ZStringNative) \
         returns CInt \
         binds to "c:libhunspell>Hunspell_suggest"
 
@@ -141,19 +145,21 @@ library community.livecode.trevordevore.hunspell
   */
   public handler hunspellSuggest(in pString as String) returns String
     variable tNumSuggestions as Integer
-    variable tArrayOfStrings as Pointer
+    variable tSuggestionsList as Pointer -- array of strings
     variable tSuggestions as String
     variable tIndex as Integer
 
     unsafe
-      put hunspell_suggest(mHunspell, tArrayOfStrings, pString) into tNumSuggestions
+      put hunspell_suggest(mHunspell, tSuggestionsList, pString) into tNumSuggestions
       log tNumSuggestions
       if tNumSuggestions > 0 then
-        repeat with tIndex from 1 up to tNumSuggestions
+        variable tList as List
 
-        end repeat
+        if CArrayToList("r", tSuggestions, tSuggestionsList, tList) then
+            log tList
+        end if
 
-        hunspell_free_list(mHunspell, tArrayOfStrings, tNumSuggestions)
+        -- hunspell_free_list(mHunspell, tSuggestions, tNumSuggestions)
       end if
     end unsafe
 
@@ -213,6 +219,26 @@ library community.livecode.trevordevore.hunspell
       put hunspell_remove(mHunspell, pWord) into tRslt
       log tRslt
     end unsafe
+  end handler
+
+
+  unsafe handler CArrayToList(in pAggregateBinding as String, in pCArray as Pointer, in pCount as Integer, out rList as List) returns Boolean
+    variable tTypeInfo as Pointer
+    if not MCAggregateTypeInfo(pAggregateBinding, tTypeInfo) then
+      return false
+    end if
+
+    variable tList as List
+    variable tSuccess as Boolean
+    put MCProperListCreateWithForeignValues(tTypeInfo, pCArray, pCount, tList) into tSuccess
+
+    MCValueRelease(tTypeInfo)
+    if not tSuccess then
+      return false
+    end if
+
+    put tList into rList
+    return true
   end handler
 
 end library
