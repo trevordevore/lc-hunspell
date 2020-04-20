@@ -5,14 +5,19 @@ library community.livecode.trevordevore.hunspell
 
   metadata title is "Hunspell"
   metadata author is "Trevor DeVore"
-  metadata version is "0.0.1"
+  metadata version is "0.1.0"
 
   constant kMCStringEncodingUTF8 is 4
 
   public type Hunspell is Pointer
 
+  -- size_t strlen(const char *str)
+  foreign handler CStrLen(in pStrPtr as Pointer) returns UIntSize binds to "c:strlen"
+
   foreign handler MCStringCreateWithCString(in pString as Pointer, out rString as String) returns CBool binds to "<builtin>"
   foreign handler MCStringConvertToBytes(in pString as String, in pEncoding as CUInt, in pIsExternalRep as CBool, out rBytes as Pointer, out rByteCount as LCUInt) \
+        returns CBool binds to "<builtin>"
+  foreign handler MCStringCreateWithBytes(in pBytes as Pointer, in pByteCount as LCUInt, in pEncoding as CUInt, in pIsExternalRep as CBool, out rString as String) \
         returns CBool binds to "<builtin>"
   foreign handler MCDataGetBytePtr(in pData as Data) returns Pointer binds to "<builtin>"
   foreign handler MCAggregateTypeInfo(in pBinding as String, out rTypeInfo as Pointer) returns CBool binds to "<builtin>"
@@ -36,7 +41,7 @@ library community.livecode.trevordevore.hunspell
         returns Pointer \
         binds to "c:libhunspell>Hunspell_get_dic_encoding"
 
-  foreign handler hunspell_suggest (in pHunspell as Hunspell, out pSuggestionList as Pointer, in pUTF8String as Pointer) \
+  foreign handler hunspell_suggest (in pHunspell as Hunspell, inout pSuggestionList as optional Pointer, in pUTF8String as Pointer) \
         returns CInt \
         binds to "c:libhunspell>Hunspell_suggest"
 
@@ -52,7 +57,7 @@ library community.livecode.trevordevore.hunspell
         returns CInt \
         binds to "c:libhunspell>Hunspell_remove"
 
-  foreign handler hunspell_free_list (in pHunspell as Hunspell, in pList as Pointer, in pNumSuggestions as CInt) \
+  foreign handler hunspell_free_list (in pHunspell as Hunspell, inout pSuggestionList as Pointer, in pNumSuggestions as CInt) \
         returns nothing \
         binds to "c:libhunspell>Hunspell_free_list"
 
@@ -84,6 +89,7 @@ library community.livecode.trevordevore.hunspell
     unsafe
       if (mHunspell is not nothing) then
         hunspell_destroy(mHunspell)
+        put nothing into mHunspell
       end if
     end unsafe
   end handler
@@ -147,29 +153,40 @@ library community.livecode.trevordevore.hunspell
     variable tUTF8String as Pointer
     variable tByteCount as Number
     variable tNumSuggestions as Integer
-    variable tSuggestionsList as Pointer -- array of strings
+    variable tSuggestionsCArray as optional Pointer -- array of strings
+    variable tSuggestionsList as List
     variable tSuggestions as String
-    variable tIndex as Integer
+    variable tStrList as List
+    variable tSuggestion as String
 
     unsafe
       if MCStringConvertToBytes(pString, kMCStringEncodingUTF8, false, tUTF8String, tByteCount) then
-        put hunspell_suggest(mHunspell, tSuggestionsList, tUTF8String) into tNumSuggestions
-        log tNumSuggestions
+        put hunspell_suggest(mHunspell, tSuggestionsCArray, tUTF8String) into tNumSuggestions
         if tNumSuggestions > 0 then
           variable tList as List
 
-          if CArrayToList("r", tSuggestions, tSuggestionsList, tList) then
-              log tList
+          if CArrayToList("r", tSuggestionsCArray, tNumSuggestions, tList) then
+            repeat for each element tStrList in tList
+              if MCStringCreateWithBytes(tStrList[1], CStrLen(tStrList[1]) , kMCStringEncodingUTF8, false, tSuggestion) then
+                push tSuggestion onto tSuggestionsList
+              else
+                log "Error: Unable to convert UTF-8 suggestion to string"
+              end if
+            end repeat
+          else
+            log "Error: Unable to convert CArray to List"
           end if
-
-          -- hunspell_free_list(mHunspell, tSuggestions, tNumSuggestions)
         end if
+
+        hunspell_free_list(mHunspell, tSuggestionsCArray, tNumSuggestions)
       else
         log "unable to convert string to UTF-8"
       end if
     end unsafe
 
-    return ""
+    combine tSuggestionsList with newline into tSuggestions
+
+    return tSuggestions
   end handler
 
 
