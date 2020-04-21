@@ -58,6 +58,7 @@ library community.livecode.trevordevore.hunspell
         returns CInt \
         binds to "c:libhunspell>Hunspell_remove"
 
+  // Use `inout` for pSuggestionList. Otherwise app crashes when called.
   foreign handler hunspell_free_list (in pHunspell as Hunspell, inout pSuggestionList as Pointer, in pNumSuggestions as CInt) \
         returns nothing \
         binds to "c:libhunspell>Hunspell_free_list"
@@ -169,6 +170,7 @@ library community.livecode.trevordevore.hunspell
 
     unsafe
       if MCStringConvertToBytes(pString, kMCStringEncodingUTF8, false, tUTF8String, tByteCount) then
+        // as per Hunspell header, tSuggestionsCArray must not be initialized, hence the `optional`
         put hunspell_suggest(mHunspell, tSuggestionsCArray, tUTF8String) into tNumSuggestions
         if tNumSuggestions > 0 then
           variable tList as List
