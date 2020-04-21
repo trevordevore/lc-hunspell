@@ -13,6 +13,7 @@ library community.livecode.trevordevore.hunspell
 
   -- size_t strlen(const char *str)
   foreign handler CStrLen(in pStrPtr as Pointer) returns UIntSize binds to "c:strlen"
+  foreign handler CStrLenWin(in pStrPtr as Pointer) returns UIntSize binds to "msvcrt>strlen"
 
   foreign handler MCStringCreateWithCString(in pString as Pointer, out rString as String) returns CBool binds to "<builtin>"
   foreign handler MCStringConvertToBytes(in pString as String, in pEncoding as CUInt, in pIsExternalRep as CBool, out rBytes as Pointer, out rByteCount as LCUInt) \
@@ -163,6 +164,7 @@ library community.livecode.trevordevore.hunspell
     variable tSuggestionsList as List
     variable tSuggestions as String
     variable tStrList as List
+    variable tStrLen as Integer
     variable tSuggestion as String
 
     unsafe
@@ -174,7 +176,12 @@ library community.livecode.trevordevore.hunspell
           if CArrayToList("r", tSuggestionsCArray, tNumSuggestions, tList) then
             repeat for each element tStrList in tList
               // TODO: Convert string based on dictionary encoding. Currently assuming it is UTF-8.
-              if MCStringCreateWithBytes(tStrList[1], CStrLen(tStrList[1]) , kMCStringEncodingUTF8, false, tSuggestion) then
+              if the operating system is "windows" then
+                put CStrLenWin(tStrList[1]) into tStrLen
+              else
+                put CStrLen(tStrList[1]) into tStrLen
+              end if
+              if MCStringCreateWithBytes(tStrList[1], tStrLen , kMCStringEncodingUTF8, false, tSuggestion) then
                 push tSuggestion onto tSuggestionsList
               else
                 log "Error: failed to convert UTF-8 suggestion to string"
