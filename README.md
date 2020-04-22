@@ -1,11 +1,30 @@
 # lc-hunspell
 LCB Wrapper around Hunspell
 
-This repo contains version 1.6.2 of Hunspell for 32-bit and 64-bit Windows. A French dictionary is included for testing purposes.
+This repo contains version 1.6.2 of Hunspell for 32-bit and 64-bit Windows. The hunspell.lcb file wraps these DLLs and provides an API for doing the following:
 
-A wrapper around NSSpellChecker for macOS can be found at the following url:
+- Spell checking a word
+- Getting suggested words for a misspelled word
+- Adding a word to the in-memory dictionary
+- Removing a word from the in-memory dictionary
+
+The hunspell.livecodescript file is intended to be used as a library. It provides the `hunspellFindMisspelledWords` function which will spell check a run of text and returns character ranges for all misspelled words. The return value can be assigned to the `flaggedRanges` property of a field.
+
+A French dictionary is included for testing purposes.
+
+# Linux and macoS Support
+
+## Linux
+
+Support can be added to this repo by compiling the hunspell library as a shared object library (.so) for both 32 and 64-bit. The 32-bit library should be added as `./code/x86-linux/libhunspell.so` and the 64-bit version should be added as `./code/x86_64-linux/libhunspell.so`.
+
+## macOS
+
+macOS provides a built-in spell checker which should be used. A wrapper around NSSpellChecker for macOS can be found at the following url:
 
 https://github.com/trevordevore/lc-macos-toolset/blob/master/NSSpellChecker/nsspellchecker.lcb
+
+If you want to work on the extension on macOS then add a hunspell dylib to `./code/x86_64-mac/libhunspell.dylib`.
 
 ## Testing
 
