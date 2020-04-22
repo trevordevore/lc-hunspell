@@ -1,7 +1,9 @@
 # lc-hunspell
 LCB Wrapper around Hunspell
 
-This repo contains version 1.6.2 of Hunspell for 32-bit and 64-bit Windows. A wrapper around NSSpellChecker for macOS can be found at the following url:
+This repo contains version 1.6.2 of Hunspell for 32-bit and 64-bit Windows. A French dictionary is included for testing purposes.
+
+A wrapper around NSSpellChecker for macOS can be found at the following url:
 
 https://github.com/trevordevore/lc-macos-toolset/blob/master/NSSpellChecker/nsspellchecker.lcb
 
