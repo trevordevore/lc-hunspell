@@ -5,7 +5,7 @@ library community.livecode.trevordevore.hunspell
 
   metadata title is "Hunspell"
   metadata author is "Trevor DeVore"
-  metadata version is "0.1.0"
+  metadata version is "0.2.0"
 
   constant kMCStringEncodingUTF8 is 4
 
