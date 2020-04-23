@@ -81,6 +81,8 @@ Returns: CR-delimited list of start+end character indices for misspelled words.
 function hunspellFindMisspelledWords pText
   constant kJoinLetter = ".'’"
   constant kJoinNumber = ".-,/"
+  constant kJoinEmail = "@"
+  constant kJoinDomain = "."
 
   local tRanges
   local tLength
@@ -109,11 +111,10 @@ function hunspellFindMisspelledWords pText
     end if
 
     /*
-      Rules for spell checking URLs:
-      1. Once user has typed :// then scanner is inside of a url and spell checking
-         is turned off until white space is encountered again.
-      2. If scanner is not in a url and user types char.char then word will be checked for
-         a potential domain.
+      Rules for spell checking URLs, emails, and domains:
+      1. Once user has typed :// or the @ character between letters or numbers then scanner is inside of a url
+         and spell checking is turned off until white space is encountered again.
+      2. If scanner is not in a url and user types char|num.char|num then check for potential domain.
      */
 
     local tEndIndex
@@ -128,25 +129,34 @@ function hunspellFindMisspelledWords pText
       put _codepointCategory(codepoint 1 of tNextCharacter) into tNextCategory
       if tNextCategory is kCategoryLetter or tNextCategory is kCategoryNumber or tNextCategory is kCategoryNonBreaking \
             or (tInsideURL and tNextCategory is not kCategoryWhitespace) then
+        # Continue with word
         add 1 to tEndIndex
         put tNextCategory into tCategory
       else if tInsideURL and tNextCategory is kCategoryWhitespace then
         # End of url
         exit repeat
       else if tEndIndex < tLength - 1 then
+        # Look for special joins characters that continue same word or signify a url, email, or domain.
         local tThirdCharacter
         put character (tEndIndex + 2) of pText into tThirdCharacter
         put _codepointCategory(codepoint 1 of tThirdCharacter) into tNextCategory
-        # Look for special joins characters that continue same word.
-        if tNextCategory is tCategory and \
-              ((tCategory is kCategoryNumber and tNextCharacter is among the characters of kJoinNumber) or \
-              (tCategory is kCategoryLetter and tNextCharacter is among the characters of kJoinLetter)) then
-          put tNextCharacter is "." into tPotentialDomain
-          add 2 to tEndIndex
-        else if tNextCharacter is ":" and tThirdCharacter is "/" and character tEndIndex+3 of pText is "/" then
-          # Look for start of url
+
+        if tNextCharacter is ":" and tThirdCharacter is "/" and character tEndIndex+3 of pText is "/" then
+          # Found url
           put true into tInsideURL
           add 3 to tEndIndex
+        else if (tNextCharacter is kJoinEmail or tNextCharacter is kJoinDomain) \
+              and (tCategory is kCategoryNumber or tCategory is kCategoryLetter) \
+              and (tNextCategory is kCategoryNumber or tNextCategory is kCategoryLetter) then
+          # Found email (treat as url) or domain
+          put tNextCharacter is kJoinEmail into tInsideURL
+          put tNextCharacter is kJoinDomain into tPotentialDomain
+          add 2 to tEndIndex
+        else if tNextCategory is tCategory and \
+              ((tCategory is kCategoryNumber and tNextCharacter is among the characters of kJoinNumber) or \
+              (tCategory is kCategoryLetter and tNextCharacter is among the characters of kJoinLetter)) then
+          # Continue with word. E.g. char.char, char'char, num.num, num/num, etc.
+          add 2 to tEndIndex
         else
           exit repeat
         end if
