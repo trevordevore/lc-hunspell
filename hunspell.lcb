@@ -153,9 +153,12 @@ library community.livecode.trevordevore.hunspell
 
 
   /**
-  Summary:
+  Summary: Returns spelling suggestions for a string.
 
-  Returns: String
+  Parameters:
+  pString: The string to make suggestions for.
+
+  Returns: CR-delimited list of suggestions.
   */
   public handler hunspellSuggest(in pString as String) returns String
     variable tUTF8String as Pointer
