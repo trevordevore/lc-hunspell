@@ -34,6 +34,10 @@ library community.livecode.trevordevore.hunspell
         returns nothing \
         binds to "c:libhunspell>Hunspell_destroy"
 
+  foreign handler hunspell_add_dic (in pHunspell as Hunspell, in pDPath as ZStringUTF8) \
+        returns CInt \
+        binds to "c:libhunspell>Hunspell_add_dic"
+
   foreign handler hunspell_spell (in pHunspell as Hunspell, in pUTF8String as Pointer) \
         returns CInt \
         binds to "c:libhunspell>Hunspell_spell"
@@ -97,6 +101,28 @@ library community.livecode.trevordevore.hunspell
         hunspell_destroy(mHunspell)
         put nothing into mHunspell
       end if
+    end unsafe
+  end handler
+
+
+  /**
+  Summary: Load additional dictionary files.
+
+  Parameters:
+  pDictPath: The path to the dictionary file. Must use UTF-8 encoding.
+
+  Description:
+  The dictionary file must have the same number on the first line as the dictionary
+  that was loaded using `hunspellInitialize()`.
+
+  A return value of 0 means there are additional dictionary slots available.
+  A value of 1 means the slots are now full.
+
+  Returns: Integer
+  */
+  public handler hunspellAddDic(in pDictPath as String) returns Integer
+    unsafe
+      return hunspell_add_dic(mHunspell, pDictPath)
     end unsafe
   end handler
 
