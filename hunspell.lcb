@@ -26,7 +26,7 @@ library community.livecode.trevordevore.hunspell
   foreign handler MCProperListCreateWithForeignValues(in pTypeInfo as Pointer, \
         in pCArray as Pointer, in pCount as LCUIndex, out pList as List) returns CBool binds to "<builtin>"
 
-  foreign handler hunspell_create (in pAffPath as ZStringNative, in pDPath as ZStringNative) \
+  foreign handler hunspell_create (in pAffPath as ZStringUTF8, in pDPath as ZStringUTF8) \
         returns Hunspell \
         binds to "c:libhunspell>Hunspell_create"
 
@@ -50,15 +50,15 @@ library community.livecode.trevordevore.hunspell
         returns CInt \
         binds to "c:libhunspell>Hunspell_suggest"
 
-  foreign handler hunspell_add (in pHunspell as Hunspell, in pWord as ZStringNative) \
+  foreign handler hunspell_add (in pHunspell as Hunspell, in pWord as ZStringUTF8) \
         returns CInt \
         binds to "c:libhunspell>Hunspell_add"
 
-  foreign handler hunspell_add_with_affix (in pHunspell as Hunspell, in pWord as ZStringNative, in pExample as ZStringNative) \
+  foreign handler hunspell_add_with_affix (in pHunspell as Hunspell, in pWord as ZStringUTF8, in pExample as ZStringUTF8) \
         returns CInt \
         binds to "c:libhunspell>Hunspell_add_with_affix"
 
-  foreign handler hunspell_remove (in pHunspell as Hunspell, in pWord as ZStringNative) \
+  foreign handler hunspell_remove (in pHunspell as Hunspell, in pWord as ZStringUTF8) \
         returns CInt \
         binds to "c:libhunspell>Hunspell_remove"
 
