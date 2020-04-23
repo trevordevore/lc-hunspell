@@ -79,7 +79,7 @@ Based on code provided by the LiveCode team.
 Returns: CR-delimited list of start+end character indices for misspelled words.
 */
 function hunspellFindMisspelledWords pText
-  constant kJoinLetter = ".''"
+  constant kJoinLetter = ".'’"
   constant kJoinNumber = ".-,/"
 
   local tRanges
