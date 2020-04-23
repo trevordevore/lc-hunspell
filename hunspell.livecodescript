@@ -67,7 +67,7 @@ This function will find an spell check each word in `pText`. If a misspelled wor
 is found then a COMMA-delimited list of the start+end character numbers is added to
 a CR-delimited list of ranges that will be returned.
 
-The scanner will detect urls (strings with :// in them) and not spell check them.
+The scanner will detect urls (strings with :// in them) and email addresses and not spell check them.
 It will also look for a handful of common TLDs (e.g. .com, .edu, etc.) and not spell check
 them either.
 
