@@ -61,6 +61,7 @@ Summary: Return a sequence of start+end character indices for each word in `pTex
 
 Parameters:
 pText: The string to spell check.
+pOffset: The character offset to start from. Default is 1.
 
 Description:
 This function will find an spell check each word in `pText`. If a misspelled word
@@ -78,12 +79,13 @@ Based on code provided by the LiveCode team.
 
 Returns: CR-delimited list of start+end character indices for misspelled words.
 */
-function hunspellFindMisspelledWords pText
+function hunspellFindMisspelledWords pText, pOffset
   constant kJoinLetter = ".'’"
   constant kJoinNumber = ".-,/"
   constant kJoinEmail = "@"
   constant kJoinDomain = "."
 
+  local tStartIndex
   local tRanges
   local tLength
   local tInsideURL = false
@@ -91,7 +93,7 @@ function hunspellFindMisspelledWords pText
 
   put the number of characters in pText into tLength
 
-  local tStartIndex = 1
+  put max(1, pOffset) into tStartIndex
   repeat while tStartIndex <= tLength
     // skip to word start
     local tCategory
