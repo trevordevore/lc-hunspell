@@ -6,13 +6,13 @@ constant kCategoryPunctuation = "punctuation"
 constant kCategoryWhitespace = "whitespace"
 constant kCategoryNonBreaking = "non-breaking"
 
-local tTLDsA
+local sTLDsA
 
 on libraryStack
   if the target is not me then pass libraryStack
 
-  put "com,edu,gov,io,local,mil,net,org,au,ca,cf,cn,de,eu,fr,ga,nl,nl,ru,tk,tv,uk,us" into tTLDsA
-  split tTLDsA by "," and "="
+  put "com,edu,gov,io,local,mil,net,org,au,ca,cf,cn,de,eu,fr,ga,nl,nl,ru,tk,tv,uk,us" into sTLDsA
+  split sTLDsA by "," and "="
 end libraryStack
 
 
@@ -203,5 +203,5 @@ Returns: Boolean
 */
 private function _wordHasDomain pWord
   set the itemDelimiter to "."
-  return item -1 of pWord is among the keys of tTLDsA
+  return item -1 of pWord is among the keys of sTLDsA
 end _wordHasDomain
