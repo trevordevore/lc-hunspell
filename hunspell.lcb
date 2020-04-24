@@ -221,9 +221,9 @@ library community.livecode.trevordevore.hunspell
           else
             log "Error: failed to convert CArray to List"
           end if
-        end if
 
-        hunspell_free_list(mHunspell, tSuggestionsCArray, tNumSuggestions)
+          hunspell_free_list(mHunspell, tSuggestionsCArray, tNumSuggestions)
+        end if
       else
         log "Error: failed to convert string to UTF-8"
       end if
