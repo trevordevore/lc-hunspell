@@ -10,7 +10,11 @@ This repo contains version 1.6.2 of Hunspell for 32-bit and 64-bit Windows. The 
 
 The hunspell.livecodescript file is intended to be used as a library. It provides the `hunspellFindMisspelledWords` function which will spell check a run of text and returns character ranges for all misspelled words. The return value can be assigned to the `flaggedRanges` property of a field.
 
-A French dictionary is included for testing purposes.
+## Dictionaries
+
+A French dictionary is included for testing purposes. Dictionaries in a variety of languages that are in the correct format for use with hunspell can be found in the following github repo:
+
+https://github.com/wooorm/dictionaries
 
 # Linux and macoS Support
 
