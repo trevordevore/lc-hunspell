@@ -7,6 +7,7 @@ constant kCategoryWhitespace = "whitespace"
 constant kCategoryNonBreaking = "non-breaking"
 
 local sTLDsA
+local sWordChars
 
 on libraryStack
   if the target is not me then pass libraryStack
@@ -24,36 +25,77 @@ on releaseStack
 end releaseStack
 
 
-/**
-Summary: Classify codepoint as one of letter, number, or punctuation.
-
-Parameters:
-pCodepoint: The codepoint to check.
+/*
+Summary: Find and load the WORDCHARS variable in an affix file.
 
 Description:
-Based on code provided by the LiveCode team.
+A Huspell Affix file (.aff) has a `WORDCHARS` setting which lists additional
+characters that should be considered part of a word. The Hunspell C API does
+not provide access to this setting (only the C++ does) so it needs to be manually
+extracted from the `.aff` file and then set using this command.
 
-Returns: Classification string. See constants.
+Returns: Error message
 */
-private function _codepointCategory pCodepoint
-  // check if non-breaking space
-  if pCodepoint is numToCodepoint(160) then
-    return kCategoryNonBreaking
+command hunspellLoadWordCharsFromAffixFile pAffixFile
+  local tError
+
+  open file pAffixFile for "utf-8" text read
+  put the result into tError
+
+  if tError is empty then
+    repeat forever
+      read from file pAffixFile for 1 line
+      if the result is "EOF" then exit repeat
+      put the result into tError
+      if tError is not empty then exit repeat
+
+      if it begins with "WORDCHARS" then
+        put word 1 to -1 of (char 10 to -1 of it) into sWordChars
+        exit repeat
+      end if
+    end repeat
+
+    close file pAffixFile
   end if
 
-  local tCategory
-  put codepointProperty(pCodepoint, "General_Category") into tCategory
-  if tCategory ends with "Letter" then
-    return kCategoryLetter
-  else if tCategory ends with "Number" then
-    return kCategoryNumber
-  else
-    if codepointProperty(pCodepoint, "White_Space") then
-      return kCategoryWhitespace
-    end if
-    return kCategoryPunctuation
-  end if
-end _codepointCategory
+  return tError
+end hunspellLoadWordCharsFromAffixFile
+
+
+/**
+Summary: Set the WORDCHARS for the current Hunspell dictionary.
+
+Parameters:
+pWordChars: A string of characters that should be counted as part of a word.
+
+Description:
+A Huspell Affix file (.aff) has a `WORDCHARS` setting which lists additional
+characters that should be considered part of a word. The Hunspell C API does
+not provide access to this setting (only the C++ does) so it needs to be manually
+extracted from the `.aff` file and then set using this command.
+
+Typically you will use `hunspellLoadWordCharsFromAffixFile` to automatically find
+and load the value. Use this command to manually set it.
+
+Returns: nothing
+*/
+command hunspellSetWordChars pWordChars
+  put pWordChars into sWordChars
+  return empty
+end hunspellSetWordChars
+
+
+/**
+Summary: Returns the WORDCHARS value.
+
+Description:
+WORDCHARS is set using `hunspellLoadWordCharsFromAffixFile` or `hunspellSetWordChars`.
+
+Returns: String
+*/
+function hunspellGetWordChars
+  return sWordChars
+end hunspellGetWordChars
 
 
 /**
@@ -129,8 +171,11 @@ function hunspellFindMisspelledWords pText, pOffset
 
       local tNextCategory
       put _codepointCategory(codepoint 1 of tNextCharacter) into tNextCategory
-      if tNextCategory is kCategoryLetter or tNextCategory is kCategoryNumber or tNextCategory is kCategoryNonBreaking \
-            or (tInsideURL and tNextCategory is not kCategoryWhitespace) then
+      if tNextCategory is kCategoryLetter \
+            or tNextCategory is kCategoryNumber \
+            or tNextCategory is kCategoryNonBreaking \
+            or (tInsideURL and tNextCategory is not kCategoryWhitespace) \
+            then
         # Continue with word
         add 1 to tEndIndex
         put tNextCategory into tCategory
@@ -147,6 +192,12 @@ function hunspellFindMisspelledWords pText, pOffset
           # Found url
           put true into tInsideURL
           add 3 to tEndIndex
+        else if tNextCharacter is among the characters of sWordChars then
+          # Continue with word
+          # sWordChars is the `WORDCHARS` value from the Hunspell `.aff` file. See `hunspellSetWordChars`.
+          add 1 to tEndIndex
+          put tNextCategory into tCategory
+          put tNextCharacter is kJoinDomain into tPotentialDomain
         else if (tNextCharacter is kJoinEmail or tNextCharacter is kJoinDomain) \
               and (tCategory is kCategoryNumber or tCategory is kCategoryLetter) \
               and (tNextCategory is kCategoryNumber or tNextCategory is kCategoryLetter) then
@@ -189,6 +240,38 @@ function hunspellFindMisspelledWords pText, pOffset
 
   return tRanges
 end hunspellFindMisspelledWords
+
+
+/**
+Summary: Classify codepoint as one of letter, number, or punctuation.
+
+Parameters:
+pCodepoint: The codepoint to check.
+
+Description:
+Based on code provided by the LiveCode team.
+
+Returns: Classification string. See constants.
+*/
+private function _codepointCategory pCodepoint
+  // check if non-breaking space
+  if pCodepoint is numToCodepoint(160) then
+    return kCategoryNonBreaking
+  end if
+
+  local tCategory
+  put codepointProperty(pCodepoint, "General_Category") into tCategory
+  if tCategory ends with "Letter" then
+    return kCategoryLetter
+  else if tCategory ends with "Number" then
+    return kCategoryNumber
+  else
+    if codepointProperty(pCodepoint, "White_Space") then
+      return kCategoryWhitespace
+    end if
+    return kCategoryPunctuation
+  end if
+end _codepointCategory
 
 
 /**
